@@ -227,6 +227,7 @@ Function Set-SQLDisk
 	}
 	Remove-CimSession $cim
 }
+
 Function Test-SQLService {
 	param(
 		$ComputerName
@@ -291,7 +292,7 @@ function Install-SQL
 		[ValidateScript({
 					if (-not (Test-Connection -ComputerName $_ -Quiet -Count 1)) 
 					{
-						throw "The computer [$_] could not be reached."
+						throw "The computer $_ could not be reached."
 					}
 					else 
 					{
@@ -340,23 +341,13 @@ function Install-SQL
 		
 		Test-WSManCredSSP
 
-#		Write-Host 'Server:       ' $server -ForegroundColor $Yellow
-#		Write-Host 'Miljö:        ' $env -ForegroundColor $Yellow
-#		Write-Host 'Installation: ' $sql -ForegroundColor $Yellow
-#		Write-Host 'Version:      ' $version -ForegroundColor $Yellow
-#		Write-Host 'Type:         ' $type -ForegroundColor $Yellow
-#		Write-Host -Object 'Är detta korrekt (Y/N): ' -NoNewline -ForegroundColor DarkYellow
-#		$check = Read-Host 
+
 
 		Import-Module -Name SQLServer -DisableNameChecking
 	}
 	Process
 	{
 		
-#		if ($check -eq 'Y') 
-#		{
-#			$credential = Get-Credential -UserName $env:USERDOMAIN\$env:username -Message 'Konto för installation av SQL server'
-
 			# Lägger till servern i rätt sec grupp för backup.
 			Write-Verbose -Message 'Setting Backupfolder'
 			$backupfolder = Get-SQLBackupFolder -ComputerName $server -env $env -backupfolder $backupfolder
@@ -576,15 +567,7 @@ function Install-SQL
     
 	End
 	{
-#		if ($check -eq 'N') 
-#		{
-#			Write-Host -Object 'Installationen avbröts' -ForegroundColor Red
-#		}
-#		else
-#		{
-			# Auto installationen klar
-			Write-Output -Object 'Installationen klar. Kvarstår att göra de manuella inställningarna'
-#		}
+		Write-Output -Object 'Installationen klar. Kvarstår att göra de manuella inställningarna'
 		Set-Location -Path $startpath
 	}
 }
