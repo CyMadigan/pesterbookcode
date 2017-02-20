@@ -7,7 +7,7 @@ Function Test-WSManCredSSP
 	{
 		#enabla credspp
 		try {
-			Enable-WSManCredSSP -Role client -DelegateComputer *.sodra.com
+			Enable-WSManCredSSP -Role client -DelegateComputer *.domain.local
 			$true
 		}
 		catch {
@@ -330,14 +330,14 @@ function Install-SQL
 			Throw "$server has running SQL services"
 		}
 		$Drift = 'drift'
-		${.sodra.com} = '{0}.sodra.com'
+		${.domain.local} = '{0}.domain.local'
 		$AO = 'AO'
 		$Acc = 'Acc'
 		$Prod = 'Prod'
 		$Test = 'Test'
 		$Yellow = 'Yellow'
 		$startpath = (Get-Location).path
-		$backupfolder = '\\sodra.com\sql-backup\'
+		$backupfolder = '\\domain.local\sql-backup\'
 		
 		Test-WSManCredSSP
 
@@ -371,10 +371,10 @@ function Install-SQL
 			}
 
 			# Startar om servern och väntar på att den skall svara igen
-			Restart-Computer -ComputerName (${.sodra.com} -f $server) -Wait -For powershell -Force
+			Restart-Computer -ComputerName (${.domain.local} -f $server) -Wait -For powershell -Force
 
 			# Slår på så att vi kan skicka vidare användarnamn och lösenord
-			Invoke-Command -ComputerName (${.sodra.com} -f $server) -ScriptBlock {
+			Invoke-Command -ComputerName (${.domain.local} -f $server) -ScriptBlock {
 				Enable-WSManCredSSP -Role Server -Force
 			}
 
@@ -387,7 +387,7 @@ function Install-SQL
 			}
 			
 			# Installerar SQL 
-			Invoke-Command -ComputerName (${.sodra.com} -f $server) -Credential $credential -Authentication Credssp -ScriptBlock {
+			Invoke-Command -ComputerName (${.domain.local} -f $server) -Credential $credential -Authentication Credssp -ScriptBlock {
 				param (
 					[Parameter(Mandatory)][String]$switchSQL,
 					[Parameter(Mandatory)][String]$switchVersion,
@@ -397,19 +397,19 @@ function Install-SQL
 				{
 					'2008' 
 					{
-						New-PSDrive -Name z -PSProvider FileSystem -Root '\\sodra.com\media\kits\microsoft\sql\ScriptInstall\2008R2'
+						New-PSDrive -Name z -PSProvider FileSystem -Root '\\domain.local\media\kits\microsoft\sql\ScriptInstall\2008R2'
 					}
 					'2012' 
 					{
-						New-PSDrive -Name z -PSProvider FileSystem -Root '\\sodra.com\media\kits\microsoft\sql\ScriptInstall\2012'
+						New-PSDrive -Name z -PSProvider FileSystem -Root '\\domain.local\media\kits\microsoft\sql\ScriptInstall\2012'
 					}
 					'2014' 
 					{
-						New-PSDrive -Name z -PSProvider FileSystem -Root '\\sodra.com\media\kits\microsoft\sql\ScriptInstall\2014'
+						New-PSDrive -Name z -PSProvider FileSystem -Root '\\domain.local\media\kits\microsoft\sql\ScriptInstall\2014'
 					}
 					'2016' 
 					{
-						New-PSDrive -Name z -PSProvider FileSystem -Root '\\sodra.com\media\kits\microsoft\sql\ScriptInstall\2016'
+						New-PSDrive -Name z -PSProvider FileSystem -Root '\\domain.local\media\kits\microsoft\sql\ScriptInstall\2016'
 					}                 
 				}
             
@@ -469,13 +469,8 @@ function Install-SQL
 				Remove-PSDrive -Name z
 			} -ArgumentList $sql, $version, $type
 
-			# Tar bort gui
-			if ($gui -eq $false) {
-				#Test-WindowsFeature -ComputerName $server -Name 'Server-Gui-Shell' -Action Uninstall
-			}
-
 			# Startar om servern och väntar på att den kommer upp igen
-			Restart-Computer -ComputerName (${.sodra.com} -f $server) -Wait -For powershell -Force
+			Restart-Computer -ComputerName (${.domain.local} -f $server) -Wait -For powershell -Force
 
 			
         
@@ -503,7 +498,7 @@ function Install-SQL
 						# Traceflaggor som skall finnas på samtliga servrar
 						if ($version -ne '2016') 
 						{
-							Invoke-Sqlcmd -InputFile '\\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\enable traceflags startup.sql' -ServerInstance $server # Lägger in så att vissa traceflaggor alltid startas
+							Invoke-Sqlcmd -InputFile '\\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\enable traceflags startup.sql' -ServerInstance $server # Lägger in så att vissa traceflaggor alltid startas
 						}
                     
 						# När frågor får gå parallellt   
@@ -526,37 +521,37 @@ function Install-SQL
 					}
 				
 					# Uppsättning av drift databas och maintinance skript   
-					Invoke-Sqlcmd -InputFile \\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\drift.sql -ServerInstance $server  # skapar Drift
-					Invoke-Sqlcmd -InputFile '\\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\who is active.sql' -ServerInstance $server -Database $Drift # Who is active
+					Invoke-Sqlcmd -InputFile \\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\drift.sql -ServerInstance $server  # skapar Drift
+					Invoke-Sqlcmd -InputFile '\\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\who is active.sql' -ServerInstance $server -Database $Drift # Who is active
             
-					Invoke-Sqlcmd -InputFile \\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\sp_Blitz.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
-					Invoke-Sqlcmd -InputFile \\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\sp_BlitzCache.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
-					Invoke-Sqlcmd -InputFile \\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\sp_BlitzIndex.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
-					Invoke-Sqlcmd -InputFile \\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\sp_BlitzTrace.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
-					Invoke-Sqlcmd -InputFile \\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\sp_BlitzWho.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
-					Invoke-Sqlcmd -InputFile \\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\sp_BlitzFirst.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
-					Invoke-Sqlcmd -InputFile \\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\sp_foreachdb.sql -ServerInstance $server # the parameter -database can be omitted based on what your sql script does
+					Invoke-Sqlcmd -InputFile \\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\sp_Blitz.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
+					Invoke-Sqlcmd -InputFile \\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\sp_BlitzCache.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
+					Invoke-Sqlcmd -InputFile \\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\sp_BlitzIndex.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
+					Invoke-Sqlcmd -InputFile \\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\sp_BlitzTrace.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
+					Invoke-Sqlcmd -InputFile \\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\sp_BlitzWho.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
+					Invoke-Sqlcmd -InputFile \\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\sp_BlitzFirst.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
+					Invoke-Sqlcmd -InputFile \\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\sp_foreachdb.sql -ServerInstance $server # the parameter -database can be omitted based on what your sql script does
             
             
 					switch ($env)
 					{
 						$Prod 
 						{
-							Invoke-Sqlcmd -InputFile \\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\MaintenanceSolution.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
-							Invoke-Sqlcmd -InputFile \\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\Jobb.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
-							Invoke-Sqlcmd -InputFile \\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\Schema.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does      
+							Invoke-Sqlcmd -InputFile \\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\MaintenanceSolution.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
+							Invoke-Sqlcmd -InputFile \\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\Jobb.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
+							Invoke-Sqlcmd -InputFile \\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\Schema.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does      
 						}
 						$Acc  
 						{
-							Invoke-Sqlcmd -InputFile \\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\MaintenanceSolution-Acc.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
-							Invoke-Sqlcmd -InputFile \\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\Jobb-Acc.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
-							Invoke-Sqlcmd -InputFile \\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\Schema-Acc.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does 
+							Invoke-Sqlcmd -InputFile \\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\MaintenanceSolution-Acc.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
+							Invoke-Sqlcmd -InputFile \\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\Jobb-Acc.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
+							Invoke-Sqlcmd -InputFile \\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\Schema-Acc.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does 
 						}
 						$Test 
 						{
-							Invoke-Sqlcmd -InputFile \\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\MaintenanceSolution-Test.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
-							Invoke-Sqlcmd -InputFile \\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\Jobb-Test.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
-							Invoke-Sqlcmd -InputFile \\sodra.com\media\kits\microsoft\sql\ScriptInstall\SQL\Schema-Test.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does 
+							Invoke-Sqlcmd -InputFile \\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\MaintenanceSolution-Test.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
+							Invoke-Sqlcmd -InputFile \\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\Jobb-Test.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does
+							Invoke-Sqlcmd -InputFile \\domain.local\media\kits\microsoft\sql\ScriptInstall\SQL\Schema-Test.sql -ServerInstance $server -Database $Drift # the parameter -database can be omitted based on what your sql script does 
 						}
 					}
 				}
