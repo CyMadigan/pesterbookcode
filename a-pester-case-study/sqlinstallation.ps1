@@ -315,7 +315,7 @@ function Install-SQL
 		# SQL Server Version 
 		[Parameter(ValueFromPipelineByPropertyName,
 		Position = 3)]
-		[ValidateSet('2008','2012','2014','2016')]
+		[ValidateSet('2008R2','2012','2014','2016')]
 		[String]$version = '2016',
 		# SQL Server type (Ent (Enterprise), Std (Standard)) 
 		[Parameter(ValueFromPipelineByPropertyName,
