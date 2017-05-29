@@ -1,2 +1,2 @@
 # The Pester Book
-This repo consists of open-source code samples from "The Pester Book" by Don Jones and Adam Betram.
+This repo consists of open-source code samples from _The Pester Book_ by Adam Bertram.
